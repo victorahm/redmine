@@ -4,7 +4,7 @@ if Gem::Version.new(Bundler::VERSION) < Gem::Version.new('1.5.0')
   abort "Redmine requires Bundler 1.5.0 or higher (you're using #{Bundler::VERSION}).\nPlease update with 'gem update bundler'." 
 end
 
-gem "rails", "4.2.1"
+gem "rails", "4.2.2"
 gem "jquery-rails", "~> 3.1.1"
 gem "coderay", "~> 1.1.0"
 gem "builder", ">= 3.0.4"
@@ -107,4 +107,13 @@ end
 # Load plugins' Gemfiles
 Dir.glob File.expand_path("../plugins/*/{Gemfile,PluginGemfile}", __FILE__) do |file|
   eval_gemfile file
+end
+
+group :development do
+  gem 'capistrano'
+  gem 'capistrano-rails'
+  gem 'capistrano-bundler'
+  gem 'capistrano-passenger'
+  gem 'capistrano-rails-console'
+  gem 'capistrano-ext'
 end
