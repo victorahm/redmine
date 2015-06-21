@@ -35,7 +35,7 @@ set :pty, true
  set :linked_files, fetch(:linked_files, []).push('config/database.yml', 'config/configuration.yml')
 
 # Default value for linked_dirs is []
- set :linked_dirs, fetch(:linked_dirs, []).push('log', 'tmp/pids', 'tmp/cache', 'tmp/sockets', 'vendor/bundle', 'public/system', 'public/themes', 'files', 'plugins')
+ set :linked_dirs, fetch(:linked_dirs, []).push('log', 'tmp/pids', 'tmp/cache', 'tmp/sockets', 'vendor/bundle', 'public/system', 'public/assets', 'public/themes', 'files', 'plugins')
 
 # Default value for default_env is {}
 # set :default_env, { path: "/opt/ruby/bin:$PATH" }
@@ -45,12 +45,9 @@ set :pty, true
 
 namespace :deploy do
   
-  before 'deploy:publishing', 'redmine:plugins:migrate'
-  before 'deploy:publishing', 'generate_secret_token'
-  before 'deploy:published', 'tmp:cache:clear'
-  before 'deploy:published', 'tmp:sessions:clear'
+  before 'deploy:publishing', 'redmine:finish_deploy'
   
-  after 'deploy:published', 'passenger:restart'
+#  after 'deploy:published', 'passenger:restart'
   
 
 end

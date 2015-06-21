@@ -17,9 +17,9 @@
 # property set. Specify the username and a domain or IP for the server.
 # Don't use `:all`, it's a meta role.
 
-role :app, %w{alejandro@obsidianasystems.com}
-role :web, %w{alejandro@obsidianasystems.com}
-role :db,  %w{alejandro@obsidianasystems.com}
+role :app, %w{root@obsidianasystems.com}
+role :web, %w{root@obsidianasystems.com}
+role :db,  %w{root@obsidianasystems.com}
 
 
 
