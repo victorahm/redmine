@@ -31,6 +31,7 @@ class Version < ActiveRecord::Base
   validates_presence_of :name
   validates_uniqueness_of :name, :scope => [:project_id]
   validates_length_of :name, :maximum => 60
+  validates_length_of :description, :maximum => 255
   validates :effective_date, :date => true
   validates_inclusion_of :status, :in => VERSION_STATUSES
   validates_inclusion_of :sharing, :in => VERSION_SHARINGS
@@ -82,7 +83,7 @@ class Version < ActiveRecord::Base
   # Returns the total estimated time for this version
   # (sum of leaves estimated_hours)
   def estimated_hours
-    @estimated_hours ||= fixed_issues.leaves.sum(:estimated_hours).to_f
+    @estimated_hours ||= fixed_issues.sum(:estimated_hours).to_f
   end
 
   # Returns the total reported time for this version
@@ -226,6 +227,10 @@ class Version < ActiveRecord::Base
     sharing != 'none'
   end
 
+  def deletable?
+    fixed_issues.empty? && !referenced_by_a_custom_field?
+  end
+
   private
 
   def load_issue_counts
@@ -286,5 +291,10 @@ class Version < ActiveRecord::Base
       end
       progress
     end
+  end
+
+  def referenced_by_a_custom_field?
+    CustomValue.joins(:custom_field).
+      where(:value => id.to_s, :custom_fields => {:field_format => 'version'}).any?
   end
 end

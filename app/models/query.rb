@@ -216,7 +216,8 @@ class Query < ActiveRecord::Base
     :text => [  "~", "!~", "!*", "*" ],
     :integer => [ "=", ">=", "<=", "><", "!*", "*" ],
     :float => [ "=", ">=", "<=", "><", "!*", "*" ],
-    :relation => ["=", "=p", "=!p", "!p", "!*", "*"]
+    :relation => ["=", "=p", "=!p", "!p", "!*", "*"],
+    :tree => ["=", "~", "!*", "*"]
   }
 
   class_attribute :available_columns
@@ -486,7 +487,9 @@ class Query < ActiveRecord::Base
     if arg.is_a?(Hash)
       arg = arg.keys.sort.collect {|k| arg[k]}
     end
-    c = arg.select {|k,o| !k.to_s.blank?}.slice(0,3).collect {|k,o| [k.to_s, (o == 'desc' || o == false) ? 'desc' : 'asc']}
+    if arg
+      c = arg.select {|k,o| !k.to_s.blank?}.slice(0,3).collect {|k,o| [k.to_s, (o == 'desc' || o == false) ? 'desc' : 'asc']}
+    end
     write_attribute(:sort_criteria, c)
   end
 

@@ -130,7 +130,7 @@ class User < Principal
   scope :having_mail, lambda {|arg|
     addresses = Array.wrap(arg).map {|a| a.to_s.downcase}
     if addresses.any?
-      joins(:email_addresses).where("LOWER(address) IN (?)", addresses).uniq
+      joins(:email_addresses).where("LOWER(#{EmailAddress.table_name}.address) IN (?)", addresses).uniq
     else
       none
     end
@@ -157,6 +157,7 @@ class User < Principal
     @notified_projects_ids_changed = false
     @builtin_role = nil
     @visible_project_ids = nil
+    @managed_roles = nil
     base_reload(*args)
   end
 
@@ -323,8 +324,19 @@ class User < Principal
     return auth_source.allow_password_changes?
   end
 
+  # Returns true if the user password has expired
+  def password_expired?
+    period = Setting.password_max_age.to_i
+    if period.zero?
+      false
+    else
+      changed_on = self.passwd_changed_on || Time.at(0)
+      changed_on < period.days.ago
+    end
+  end
+
   def must_change_password?
-    must_change_passwd? && change_password_allowed?
+    (must_change_passwd? || password_expired?) && change_password_allowed?
   end
 
   def generate_password?
@@ -555,6 +567,15 @@ class User < Principal
     @visible_project_ids ||= Project.visible(self).pluck(:id)
   end
 
+  # Returns the roles that the user is allowed to manage for the given project
+  def managed_roles(project)
+    if admin?
+      @managed_roles ||= Role.givable.to_a
+    else
+      membership(project).try(:managed_roles) || []
+    end
+  end
+
   # Returns true if user is arg or belongs to arg
   def is_or_belongs_to?(arg)
     if arg.is_a?(User)
@@ -621,6 +642,12 @@ class User < Principal
   # it it has to be carefully deprecated for a version or two.
   def allowed_to_globally?(action, options={}, &block)
     allowed_to?(action, nil, options.reverse_merge(:global => true), &block)
+  end
+
+  def allowed_to_view_all_time_entries?(context)
+    allowed_to?(:view_time_entries, context) do |role, user|
+      role.time_entries_visibility == 'all'
+    end
   end
 
   # Returns true if the user is allowed to delete the user's own account

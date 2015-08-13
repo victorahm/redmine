@@ -25,6 +25,7 @@ module ApplicationHelper
   include Redmine::I18n
   include GravatarHelper::PublicMethods
   include Redmine::Pagination::Helper
+  include Redmine::SudoMode::Helper
 
   extend Forwardable
   def_delegators :wiki_helper, :wikitoolbar_for, :heads_for_wiki_formatter
@@ -1117,7 +1118,7 @@ module ApplicationHelper
 
   def checked_image(checked=true)
     if checked
-      image_tag 'toggle_check.png'
+      @checked_image_tag ||= image_tag('toggle_check.png')
     end
   end
 
@@ -1250,13 +1251,21 @@ module ApplicationHelper
     end
   end
 
+  # Returns a link to edit user's avatar if avatars are enabled
+  def avatar_edit_link(user, options={})
+    if Setting.gravatar_enabled?
+      url = "http://gravatar.com"
+      link_to avatar(user, {:title => l(:button_edit)}.merge(options)), url, :target => '_blank'
+    end
+  end
+
   def sanitize_anchor_name(anchor)
     anchor.gsub(%r{[^\s\-\p{Word}]}, '').gsub(%r{\s+(\-+\s*)?}, '-')
   end
 
   # Returns the javascript tags that are included in the html layout head
   def javascript_heads
-    tags = javascript_include_tag('jquery-1.11.1-ui-1.11.0-ujs-3.1.1', 'application')
+    tags = javascript_include_tag('jquery-1.11.1-ui-1.11.0-ujs-3.1.3', 'application')
     unless User.current.pref.warn_on_leaving_unsaved == '0'
       tags << "\n".html_safe + javascript_tag("$(window).load(function(){ warnLeavingUnsaved('#{escape_javascript l(:text_warn_on_leaving_unsaved)}'); });")
     end
@@ -1305,6 +1314,11 @@ module ApplicationHelper
     else
       options
     end
+  end
+
+  def generate_csv(&block)
+    decimal_separator = l(:general_csv_decimal_separator)
+    encoding = l(:general_csv_encoding)
   end
 
   private
