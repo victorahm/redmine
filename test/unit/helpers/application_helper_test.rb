@@ -276,11 +276,11 @@ RAW
 
   def test_redmine_links
     issue_link = link_to('#3', {:controller => 'issues', :action => 'show', :id => 3},
-                               :class => Issue.find(3).css_classes, :title => 'Error 281 when updating a recipe (New)')
+                               :class => Issue.find(3).css_classes, :title => 'Bug: Error 281 when updating a recipe (New)')
     note_link = link_to('#3-14', {:controller => 'issues', :action => 'show', :id => 3, :anchor => 'note-14'},
-                               :class => Issue.find(3).css_classes, :title => 'Error 281 when updating a recipe (New)')
+                               :class => Issue.find(3).css_classes, :title => 'Bug: Error 281 when updating a recipe (New)')
     note_link2 = link_to('#3#note-14', {:controller => 'issues', :action => 'show', :id => 3, :anchor => 'note-14'},
-                               :class => Issue.find(3).css_classes, :title => 'Error 281 when updating a recipe (New)')
+                               :class => Issue.find(3).css_classes, :title => 'Bug: Error 281 when updating a recipe (New)')
 
     revision_link = link_to('r1', {:controller => 'repositories', :action => 'revision', :id => 'ecookbook', :rev => 1},
                                    :class => 'changeset', :title => 'My very first commit do not escaping #<>&')
@@ -964,7 +964,7 @@ RAW
     result2 = link_to('#1',
                       "/issues/1",
                       :class => Issue.find(1).css_classes,
-                      :title => "Cannot print recipes (New)")
+                      :title => "Bug: Cannot print recipes (New)")
 
     expected = <<-EXPECTED
 <p>#{result1}</p>
@@ -992,6 +992,12 @@ EXPECTED
 
     @project = Project.find(1)
     assert_equal expected.gsub(%r{[\r\n\t]}, ''), textilizable(raw).gsub(%r{[\r\n\t]}, '')
+  end
+
+  def test_unbalanced_closing_pre_tag_should_not_error
+    assert_nothing_raised do
+      textilizable("unbalanced</pre>")
+    end
   end
 
   def test_syntax_highlight
@@ -1255,6 +1261,13 @@ RAW
       text = 'a *link*: http://www.example.net/'
       assert_equal '<p>a *link*: <a class="external" href="http://www.example.net/">http://www.example.net/</a></p>', textilizable(text)
     end
+  end
+
+  def test_parse_redmine_links_should_handle_a_tag_without_attributes
+    text = '<a>http://example.com</a>'
+    expected = text.dup
+    parse_redmine_links(text, nil, nil, nil, true, {})
+    assert_equal expected, text
   end
 
   def test_due_date_distance_in_words
