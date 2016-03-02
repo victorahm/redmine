@@ -141,7 +141,7 @@ GEM
     rdoc (4.2.2)
       json (~> 1.4)
     redcarpet (3.3.4)
-    redmine_crm (0.0.8)
+    redmine_crm (0.0.22)
     request_store (1.0.5)
     rmagick (2.15.4)
     roadie (3.1.1)
@@ -217,7 +217,7 @@ DEPENDENCIES
   rbpdf (~> 1.19.0)
   rdoc (>= 2.4.2)
   redcarpet (~> 3.3.2)
-  redmine_crm (= 0.0.8)
+  redmine_crm
   request_store (= 1.0.5)
   rmagick (>= 2.14.0)
   roadie-rails
