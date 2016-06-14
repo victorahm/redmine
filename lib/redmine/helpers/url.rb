@@ -15,12 +15,21 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require File.expand_path('../../../test_helper', __FILE__)
+require 'uri'
 
-class RoutingFilesTest < Redmine::RoutingTest
-  def test_files
-    should_route 'GET /projects/foo/files' => 'files#index', :project_id => 'foo'
-    should_route 'GET /projects/foo/files/new' => 'files#new', :project_id => 'foo'
-    should_route 'POST /projects/foo/files' => 'files#create', :project_id => 'foo'
+module Redmine
+  module Helpers
+    module URL
+      def uri_with_safe_scheme?(uri, schemes = ['http', 'https', 'ftp', 'mailto', nil])
+        # URLs relative to the current document or document root (without a protocol
+        # separator, should be harmless
+        return true unless uri.include? ":"
+    
+        # Other URLs need to be parsed
+        schemes.include? URI.parse(uri).scheme
+      rescue URI::InvalidURIError
+        false
+      end
+    end
   end
 end

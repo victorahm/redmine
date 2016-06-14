@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2015  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -546,7 +546,7 @@ class Query < ActiveRecord::Base
     if grouped? && (column = group_by_column)
       order = (sort_criteria_order_for(column.name) || column.default_order).try(:upcase)
       column.sortable.is_a?(Array) ?
-        column.sortable.collect {|s| "#{s} #{order}"}.join(',') :
+        column.sortable.collect {|s| "#{s} #{order}"} :
         "#{column.sortable} #{order}"
     end
   end

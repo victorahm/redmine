@@ -1,5 +1,5 @@
 # Redmine - project management software
-# Copyright (C) 2006-2015  Jean-Philippe Lang
+# Copyright (C) 2006-2016  Jean-Philippe Lang
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -302,16 +302,17 @@ class Issue < ActiveRecord::Base
   # * or if the status was not part of the new tracker statuses
   # * or the status was nil
   def tracker=(tracker)
-    if tracker != self.tracker
-      if status == default_status
+    tracker_was = self.tracker
+    association(:tracker).writer(tracker)
+    if tracker != tracker_was
+      if status == tracker_was.try(:default_status)
         self.status = nil
       elsif status && tracker && !tracker.issue_status_ids.include?(status.id)
         self.status = nil
       end
-      @custom_field_values = nil
+      reassign_custom_field_values
       @workflow_rule_by_attribute = nil
     end
-    association(:tracker).writer(tracker)
     self.status ||= default_status
     self.tracker
   end
@@ -355,7 +356,7 @@ class Issue < ActiveRecord::Base
       unless valid_parent_project?
         self.parent_issue_id = nil
       end
-      @custom_field_values = nil
+      reassign_custom_field_values
       @workflow_rule_by_attribute = nil
     end
     # Set fixed_version to the project default version if it's valid
@@ -495,6 +496,17 @@ class Issue < ActiveRecord::Base
     if new_record? && !statuses_allowed.include?(status)
       self.status = statuses_allowed.first || default_status
     end
+    if (u = attrs.delete('assigned_to_id')) && safe_attribute?('assigned_to_id')
+      if u.blank?
+        self.assigned_to_id = nil
+      else
+        u = u.to_i
+        if assignable_users.any?{|assignable_user| assignable_user.id == u}
+          self.assigned_to_id = u
+        end
+      end
+    end
+
 
     attrs = delete_unsafe_attributes(attrs, user)
     return if attrs.empty?
@@ -1626,6 +1638,7 @@ class Issue < ActiveRecord::Base
         # Same user and notes
         if @current_journal
           duplicate.init_journal(@current_journal.user, @current_journal.notes)
+          duplicate.private_notes = @current_journal.private_notes
         end
         duplicate.update_attribute :status, self.status
       end
