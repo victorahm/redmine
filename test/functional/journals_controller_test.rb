@@ -91,6 +91,46 @@ class JournalsControllerTest < ActionController::TestCase
 
   end
 
+  def test_index_should_show_visible_custom_fields_only
+    Issue.destroy_all
+    field_attributes = {:field_format => 'string', :is_for_all => true, :is_filter => true, :trackers => Tracker.all}
+    @fields = []
+    @fields << (@field1 = IssueCustomField.create!(field_attributes.merge(:name => 'Field 1', :visible => true)))
+    @fields << (@field2 = IssueCustomField.create!(field_attributes.merge(:name => 'Field 2', :visible => false, :role_ids => [1, 2])))
+    @fields << (@field3 = IssueCustomField.create!(field_attributes.merge(:name => 'Field 3', :visible => false, :role_ids => [1, 3])))
+    @issue = Issue.generate!(
+      :author_id => 1,
+      :project_id => 1,
+      :tracker_id => 1,
+      :custom_field_values => {@field1.id => 'Value0', @field2.id => 'Value1', @field3.id => 'Value2'}
+    )
+    @issue.init_journal(User.find(1))
+    @issue.update_attribute :custom_field_values, {@field1.id => 'NewValue0', @field2.id => 'NewValue1', @field3.id => 'NewValue2'}
+
+
+    user_with_role_on_other_project = User.generate!
+    User.add_to_project(user_with_role_on_other_project, Project.find(2), Role.find(3))
+    users_to_test = {
+      User.find(1) => [@field1, @field2, @field3],
+      User.find(3) => [@field1, @field2],
+      user_with_role_on_other_project => [@field1], # should see field1 only on Project 1
+      User.generate! => [@field1],
+      User.anonymous => [@field1]
+    }
+
+    users_to_test.each do |user, visible_fields|
+      get :index, :format => 'atom', :key => user.rss_key
+      @fields.each_with_index do |field, i|
+        if visible_fields.include?(field)
+          assert_select "content[type=html]", { :text => /NewValue#{i}/, :count => 1 }, "User #{user.id} was not able to view #{field.name} in API"
+        else
+          assert_select "content[type=html]", { :text => /NewValue#{i}/, :count => 0 }, "User #{user.id} was able to view #{field.name} in API"
+        end
+      end
+    end
+
+  end
+
   def test_diff_for_description_change
     get :diff, :id => 3, :detail_id => 4
     assert_response :success
@@ -199,7 +239,7 @@ class JournalsControllerTest < ActionController::TestCase
 
   def test_update_xhr
     @request.session[:user_id] = 1
-    xhr :post, :edit, :id => 2, :notes => 'Updated notes'
+    xhr :post, :update, :id => 2, :notes => 'Updated notes'
     assert_response :success
     assert_template 'update'
     assert_equal 'text/javascript', response.content_type
@@ -210,7 +250,7 @@ class JournalsControllerTest < ActionController::TestCase
   def test_update_xhr_with_empty_notes_should_delete_the_journal
     @request.session[:user_id] = 1
     assert_difference 'Journal.count', -1 do
-      xhr :post, :edit, :id => 2, :notes => ''
+      xhr :post, :update, :id => 2, :notes => ''
       assert_response :success
       assert_template 'update'
       assert_equal 'text/javascript', response.content_type

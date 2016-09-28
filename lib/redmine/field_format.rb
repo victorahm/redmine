@@ -15,6 +15,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+require 'uri'
+
 module Redmine
   module FieldFormat
     def self.add(name, klass)
@@ -212,7 +214,7 @@ module Redmine
             end
           end
         end
-        url
+        URI.encode(url)
       end
       protected :url_from_pattern
 
@@ -368,7 +370,7 @@ module Redmine
       self.form_partial = 'custom_fields/formats/link'
 
       def formatted_value(view, custom_field, value, customized=nil, html=false)
-        if html
+        if html && value.present?
           if custom_field.url_pattern.present?
             url = url_from_pattern(custom_field, value, customized)
           else
@@ -446,6 +448,10 @@ module Redmine
         value.to_f.round(2)
       end
 
+      def cast_total_value(custom_field, value)
+        value.to_f.round(2)
+      end
+
       def validate_single_value(custom_field, value, customized=nil)
         errs = super
         errs << ::I18n.t('activerecord.errors.messages.invalid') unless (Kernel.Float(value) rescue nil)
@@ -474,12 +480,12 @@ module Redmine
       end
 
       def edit_tag(view, tag_id, tag_name, custom_value, options={})
-        view.text_field_tag(tag_name, custom_value.value, options.merge(:id => tag_id, :size => 10)) +
+        view.date_field_tag(tag_name, custom_value.value, options.merge(:id => tag_id, :size => 10)) +
           view.calendar_for(tag_id)
       end
 
       def bulk_edit_tag(view, tag_id, tag_name, custom_field, objects, value, options={})
-        view.text_field_tag(tag_name, value, options.merge(:id => tag_id, :size => 10)) +
+        view.date_field_tag(tag_name, value, options.merge(:id => tag_id, :size => 10)) +
           view.calendar_for(tag_id) +
           bulk_clear_tag(view, tag_id, tag_name, custom_field, value)
       end
@@ -802,16 +808,23 @@ module Redmine
           projects.map {|project| possible_values_options(custom_field, project)}.reduce(:&) || []
         elsif object.respond_to?(:project) && object.project
           scope = object.project.shared_versions
-          if !all_statuses && custom_field.version_status.is_a?(Array)
-            statuses = custom_field.version_status.map(&:to_s).reject(&:blank?)
-            if statuses.any?
-              scope = scope.where(:status => statuses.map(&:to_s))
-            end
-          end
-          scope.sort.collect {|u| [u.to_s, u.id.to_s]}
+          filtered_versions_options(custom_field, scope, all_statuses)
+        elsif object.nil?
+          scope = Version.visible.where(:sharing => 'system')
+          filtered_versions_options(custom_field, scope, all_statuses)
         else
           []
         end
+      end
+
+      def filtered_versions_options(custom_field, scope, all_statuses=false)
+        if !all_statuses && custom_field.version_status.is_a?(Array)
+          statuses = custom_field.version_status.map(&:to_s).reject(&:blank?)
+          if statuses.any?
+            scope = scope.where(:status => statuses.map(&:to_s))
+          end
+        end
+        scope.sort.collect{|u| [u.to_s, u.id.to_s] }
       end
     end
   end
