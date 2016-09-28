@@ -25,7 +25,7 @@ module QueriesHelper
     grouped = {}
     query.available_filters.map do |field, field_options|
       if [:tree, :relation].include?(field_options[:type]) 
-        group = :label_related_issues
+        group = :label_relations
       elsif field =~ /^(.+)\./
         # association filters
         group = "field_#{$1}"
@@ -257,6 +257,8 @@ module QueriesHelper
           tags << hidden_field_tag("v[#{field}][]", value, :id => nil)
         end
       end
+    else
+      tags << hidden_field_tag("f[]", "", :id => nil)
     end
     if query.column_names.present?
       query.column_names.each do |name|
