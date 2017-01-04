@@ -1775,6 +1775,25 @@ class IssuesControllerTest < ActionController::TestCase
     assert_response 404
   end
 
+  def test_show_on_active_project_should_display_edit_links
+    @request.session[:user_id] = 1
+
+    get :show, :id => 1
+    assert_response :success
+    assert_select 'a', :text => 'Edit'
+    assert_select 'a', :text => 'Delete'
+  end
+
+  def test_show_on_closed_project_should_not_display_edit_links
+    Issue.find(1).project.close
+    @request.session[:user_id] = 1
+
+    get :show, :id => 1
+    assert_response :success
+    assert_select 'a', :text => 'Edit', :count => 0
+    assert_select 'a', :text => 'Delete', :count => 0
+  end
+
   def test_get_new
     @request.session[:user_id] = 2
     get :new, :project_id => 1, :tracker_id => 1
@@ -3286,11 +3305,31 @@ class IssuesControllerTest < ActionController::TestCase
     assert_not_nil assigns(:issue)
     assert_equal Issue.find(1), assigns(:issue)
 
+    assert_select 'select[name=?]', 'issue[project_id]'
     # Be sure we don't display inactive IssuePriorities
     assert ! IssuePriority.find(15).active?
     assert_select 'select[name=?]', 'issue[priority_id]' do
       assert_select 'option[value="15"]', 0
     end
+  end
+
+  def test_edit_should_hide_project_if_user_is_not_allowed_to_change_project
+    WorkflowPermission.create!(:role_id => 1, :tracker_id => 1, :old_status_id => 1, :field_name => 'project_id', :rule => 'readonly')
+
+    @request.session[:user_id] = 2
+    get :edit, :id => 1
+    assert_response :success
+    assert_select 'select[name=?]', 'issue[project_id]', 0
+  end
+
+  def test_edit_should_not_hide_project_when_user_changes_the_project_even_if_project_is_readonly_on_target_project
+    WorkflowPermission.create!(:role_id => 1, :tracker_id => 1, :old_status_id => 1, :field_name => 'project_id', :rule => 'readonly')
+    issue = Issue.generate!(:project_id => 2)
+
+    @request.session[:user_id] = 2
+    get :edit, :id => issue.id, :issue => {:project_id => 1}
+    assert_response :success
+    assert_select 'select[name=?]', 'issue[project_id]'
   end
 
   def test_get_edit_should_display_the_time_entry_form_with_log_time_permission
@@ -4534,7 +4573,11 @@ class IssuesControllerTest < ActionController::TestCase
       assert_equal orig.project_id, copy.project_id
       assert_equal orig.tracker_id, copy.tracker_id
       assert_equal orig.status_id, copy.status_id
-      assert_equal orig.assigned_to_id, copy.assigned_to_id
+      if orig.assigned_to_id
+        assert_equal orig.assigned_to_id, copy.assigned_to_id
+      else
+        assert_nil copy.assigned_to_id
+      end
       assert_equal orig.priority_id, copy.priority_id
     end
   end
