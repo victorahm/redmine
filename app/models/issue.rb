@@ -261,7 +261,7 @@ class Issue < ActiveRecord::Base
   # Copies attributes from another issue, arg can be an id or an Issue
   def copy_from(arg, options={})
     issue = arg.is_a?(Issue) ? arg : Issue.visible.find(arg)
-    self.attributes = issue.attributes.dup.except("id", "root_id", "parent_id", "lft", "rgt", "created_on", "updated_on")
+    self.attributes = issue.attributes.dup.except("id", "root_id", "parent_id", "lft", "rgt", "created_on", "updated_on", "closed_on")
     self.custom_field_values = issue.custom_field_values.inject({}) {|h,v| h[v.custom_field_id] = v.value; h}
     self.status = issue.status
     self.author = User.current
@@ -496,8 +496,13 @@ class Issue < ActiveRecord::Base
 
     # Project and Tracker must be set before since new_statuses_allowed_to depends on it.
     if (p = attrs.delete('project_id')) && safe_attribute?('project_id')
-      if allowed_target_projects(user).where(:id => p.to_i).exists?
-        self.project_id = p
+      if p.is_a?(String) && !p.match(/^\d*$/)
+        p_id = Project.find_by_identifier(p).try(:id)
+      else
+        p_id = p.to_i
+      end
+      if allowed_target_projects(user).where(:id => p_id).exists?
+        self.project_id = p_id
       end
 
       if project_id_changed? && attrs['category_id'].to_s == category_id_was.to_s
@@ -1076,6 +1081,15 @@ class Issue < ActiveRecord::Base
     end
   end
 
+  # Returns a scope of the given issues and their descendants
+  def self.self_and_descendants(issues)
+    Issue.joins("JOIN #{Issue.table_name} ancestors" +
+        " ON ancestors.root_id = #{Issue.table_name}.root_id" +
+        " AND ancestors.lft <= #{Issue.table_name}.lft AND ancestors.rgt >= #{Issue.table_name}.rgt"
+      ).
+      where(:ancestors => {:id => issues.map(&:id)})
+  end
+
   # Finds an issue relation given its id.
   def find_relation(relation_id)
     IssueRelation.where("issue_to_id = ? OR issue_from_id = ?", id, id).find(relation_id)
@@ -1394,7 +1408,7 @@ class Issue < ActiveRecord::Base
     end
     Project.where(condition).having_trackers
   end
- 
+
   # Returns a scope of trackers that user can assign the issue to
   def allowed_target_trackers(user=User.current)
     self.class.allowed_target_trackers(project, user, tracker_id_was)
@@ -1423,6 +1437,11 @@ class Issue < ActiveRecord::Base
   private
 
   def user_tracker_permission?(user, permission)
+    if project && !project.active?
+      perm = Redmine::AccessControl.permission(permission)
+      return false unless perm && perm.read?
+    end
+
     if user.admin?
       true
     else
@@ -1529,10 +1548,11 @@ class Issue < ActiveRecord::Base
     if issue_id && p = Issue.find_by_id(issue_id)
       if p.priority_derived?
         # priority = highest priority of open children
+        # priority is left unchanged if all children are closed and there's no default priority defined
         if priority_position = p.children.open.joins(:priority).maximum("#{IssuePriority.table_name}.position")
           p.priority = IssuePriority.find_by_position(priority_position)
-        else
-          p.priority = IssuePriority.default
+        elsif default_priority = IssuePriority.default
+          p.priority = default_priority
         end
       end
 

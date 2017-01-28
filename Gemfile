@@ -5,6 +5,7 @@ if Gem::Version.new(Bundler::VERSION) < Gem::Version.new('1.5.0')
 end
 
 gem "rails", "4.2.7.1"
+gem "addressable", "2.4.0" if RUBY_VERSION < "2.0"
 gem "jquery-rails", "~> 3.1.4"
 gem "coderay", "~> 1.1.1"
 gem "builder", ">= 3.0.4"
@@ -16,8 +17,7 @@ gem "actionpack-xml_parser"
 gem "roadie-rails"
 gem "mimemagic"
 
-# Request at least nokogiri 1.6.7.2 because of security advisories
-gem "nokogiri", ">= 1.6.7.2"
+gem "nokogiri", "~> 1.6.8"
 
 # Request at least rails-html-sanitizer 1.0.3 because of security advisories 
 gem "rails-html-sanitizer", ">= 1.0.3"
@@ -93,7 +93,7 @@ else
 end
 
 group :development do
-  gem "rdoc", ">= 2.4.2"
+  gem "rdoc", "~> 4.3"
   gem "yard"
 end
 
@@ -104,7 +104,7 @@ group :test do
   gem "simplecov", "~> 0.9.1", :require => false
   # For running UI tests
   gem "capybara"
-  gem "selenium-webdriver"
+  gem "selenium-webdriver", "~> 2.53.4"
 end
 
 local_gemfile = File.join(File.dirname(__FILE__), "Gemfile.local")
