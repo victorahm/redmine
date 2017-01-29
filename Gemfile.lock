@@ -124,8 +124,7 @@ GEM
       htmlentities (= 4.3.1)
       rbpdf-font (~> 1.19.0)
     rbpdf-font (1.19.0)
-    rdoc (4.2.2)
-      json (~> 1.4)
+    rdoc (4.3.0)
     redcarpet (3.3.4)
     redmine_crm (0.0.22)
     request_store (1.0.5)
@@ -184,7 +183,7 @@ DEPENDENCIES
   minitest
   mocha
   net-ldap (~> 0.12.0)
-  nokogiri (>= 1.6.7.2)
+  nokogiri (~> 1.6.8)
   pg (~> 0.18.1)
   protected_attributes
   rack-openid
@@ -192,14 +191,14 @@ DEPENDENCIES
   rails-dom-testing
   rails-html-sanitizer (>= 1.0.3)
   rbpdf (~> 1.19.0)
-  rdoc (>= 2.4.2)
+  rdoc (~> 4.3)
   redcarpet (~> 3.3.2)
   redmine_crm
   request_store (= 1.0.5)
   rmagick (>= 2.14.0)
   roadie-rails
   ruby-openid (~> 2.3.0)
-  selenium-webdriver
+  selenium-webdriver (~> 2.53.4)
   simplecov (~> 0.9.1)
   spreadsheet (~> 0.6.8)
   tzinfo-data
