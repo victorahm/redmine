@@ -61,7 +61,7 @@ GEM
     ffi (1.9.14)
     globalid (0.3.7)
       activesupport (>= 4.1.0)
-    htmlentities (4.3.1)
+    htmlentities (4.3.4)
     i18n (0.7.0)
     jquery-rails (3.1.4)
       railties (>= 3.0, < 5.0)
@@ -120,10 +120,10 @@ GEM
       rake (>= 0.8.7)
       thor (>= 0.18.1, < 2.0)
     rake (11.3.0)
-    rbpdf (1.19.0)
-      htmlentities (= 4.3.1)
+    rbpdf (1.19.2)
+      htmlentities
       rbpdf-font (~> 1.19.0)
-    rbpdf-font (1.19.0)
+    rbpdf-font (1.19.1)
     rdoc (4.3.0)
     redcarpet (3.3.4)
     redmine_crm (0.0.22)
@@ -177,6 +177,7 @@ DEPENDENCIES
   builder (>= 3.0.4)
   capybara
   coderay (~> 1.1.1)
+  i18n (~> 0.7.0)
   jquery-rails (~> 3.1.4)
   mime-types (~> 3.0)
   mimemagic
@@ -190,7 +191,7 @@ DEPENDENCIES
   rails (= 4.2.7.1)
   rails-dom-testing
   rails-html-sanitizer (>= 1.0.3)
-  rbpdf (~> 1.19.0)
+  rbpdf (~> 1.19.2)
   rdoc (~> 4.3)
   redcarpet (~> 3.3.2)
   redmine_crm
@@ -206,4 +207,4 @@ DEPENDENCIES
   yard
 
 BUNDLED WITH
-   1.12.5
+   1.14.6
