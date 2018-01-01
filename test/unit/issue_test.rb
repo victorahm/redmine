@@ -26,6 +26,7 @@ class IssueTest < ActiveSupport::TestCase
            :issue_statuses, :issue_categories, :issue_relations, :workflows,
            :enumerations,
            :issues, :journals, :journal_details,
+           :watchers,
            :custom_fields, :custom_fields_projects, :custom_fields_trackers, :custom_values,
            :time_entries
 
@@ -1882,8 +1883,6 @@ class IssueTest < ActiveSupport::TestCase
     issue = Issue.find(2)
     issue.assigned_to = nil
     assert_include user.mail, issue.recipients
-    issue.save!
-    assert !issue.recipients.include?(user.mail)
   end
 
   def test_recipients_should_not_include_users_that_cannot_view_the_issue
@@ -2278,11 +2277,13 @@ class IssueTest < ActiveSupport::TestCase
   end
 
   def test_overdue
-    assert Issue.new(:due_date => 1.day.ago.to_date).overdue?
-    assert !Issue.new(:due_date => Date.today).overdue?
-    assert !Issue.new(:due_date => 1.day.from_now.to_date).overdue?
+    User.current = nil
+    today = User.current.today
+    assert  Issue.new(:due_date => (today - 1.day).to_date).overdue?
+    assert !Issue.new(:due_date => today).overdue?
+    assert !Issue.new(:due_date => (today + 1.day).to_date).overdue?
     assert !Issue.new(:due_date => nil).overdue?
-    assert !Issue.new(:due_date => 1.day.ago.to_date,
+    assert !Issue.new(:due_date => (today - 1.day).to_date,
                       :status => IssueStatus.where(:is_closed => true).first
                       ).overdue?
   end
@@ -2440,9 +2441,8 @@ class IssueTest < ActiveSupport::TestCase
 
   def test_update_should_notify_previous_assignee
     ActionMailer::Base.deliveries.clear
-    user = User.find(3)
-    user.members.update_all ["mail_notification = ?", false]
-    user.update! :mail_notification => 'only_assigned'
+    user = User.generate!(:mail_notification => 'only_assigned')
+    Issue.where(:id => 2).update_all(:assigned_to_id => user.id)
 
     with_settings :notified_events => %w(issue_updated) do
       issue = Issue.find(2)
