@@ -84,7 +84,7 @@ GEM
       metaclass (~> 0.0.1)
     multi_json (1.12.2)
     net-ldap (0.12.1)
-    nokogiri (1.8.1)
+    nokogiri (1.8.2)
       mini_portile2 (~> 2.3.0)
     pg (0.18.4)
     protected_attributes (1.1.4)
