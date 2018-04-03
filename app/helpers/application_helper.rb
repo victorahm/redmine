@@ -1272,7 +1272,7 @@ module ApplicationHelper
     link_to_function '',
       "toggleCheckboxesBySelector('#{selector}')",
       :title => "#{l(:button_check_all)} / #{l(:button_uncheck_all)}",
-      :class => 'toggle-checkboxes'
+      :class => 'icon icon-checked'
   end
 
   def progress_bar(pcts, options={})
@@ -1424,6 +1424,7 @@ module ApplicationHelper
       if email.present?
         gravatar(email.to_s.downcase, options) rescue nil
       else
+        options[:size] &&= options[:size].to_s
         image_tag 'anonymous.png',
                   GravatarHelper::DEFAULT_OPTIONS
                     .except(:default, :rating, :ssl).merge(options)
