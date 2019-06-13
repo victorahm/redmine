@@ -80,6 +80,11 @@ end
 
 group :development do
   gem "yard"
+
+  #Deployment
+  gem "capistrano", "~> 3.11", require: false
+  gem 'capistrano-bundler'
+  gem 'capistrano-rails'
 end
 
 group :test do
