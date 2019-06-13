@@ -43,6 +43,10 @@ platforms :mri, :mingw, :x64_mingw do
   end
 end
 
+#Fix for Hash#dig in ruby-2.2
+#TODO: Remove when update to ruby > 2.3
+gem 'ruby_dig'
+
 # Include database gems for the adapters found in the database
 # configuration file
 require 'erb'

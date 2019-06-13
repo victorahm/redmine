@@ -4,6 +4,7 @@
 /.powrc
 /.rvmrc
 /.ruby-version
+/.ruby-gemset
 /config/additional_environment.rb
 /config/configuration.yml
 /config/database.yml
@@ -39,6 +40,4 @@
 *.rbc
 
 /.bundle
-/Gemfile.lock
 /Gemfile.local
-
