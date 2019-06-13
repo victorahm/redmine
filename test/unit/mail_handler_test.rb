@@ -988,6 +988,17 @@ class MailHandlerTest < ActiveSupport::TestCase
     assert_equal Message.find(1), m.parent
   end
 
+  def test_reply_to_a_locked_topic
+    # Lock the topic
+    topic = Message.find(2).parent
+    topic.update_attribute :locked, true
+
+    assert_no_difference('topic.replies_count') do
+      m = submit_email('message_reply_by_subject.eml')
+      assert_not_kind_of Message, m
+    end
+  end
+
   def test_should_convert_tags_of_html_only_emails
     with_settings :text_formatting => 'textile' do
       issue = submit_email('ticket_html_only.eml', :issue => {:project => 'ecookbook'})
@@ -1120,6 +1131,17 @@ class MailHandlerTest < ActiveSupport::TestCase
     issue = submit_email('ticket_with_long_subject.eml')
     assert issue.is_a?(Issue)
     assert_equal issue.subject, 'New ticket on a given project with a very long subject line which exceeds 255 chars and should not be ignored but chopped off. And if the subject line is still not long enough, we just add more text. And more text. Wow, this is really annoying. Especially, if you have nothing to say...'[0,255]
+  end
+
+  def test_email_with_split_bytes_subject
+    issue = submit_email(
+              'ticket_with_split_bytes_subject.eml',
+              :issue => {:project => 'ecookbook'},
+              :no_permission_check => '1',
+              :unknown_user => 'accept'
+            )
+    assert issue.is_a?(Issue)
+    assert_equal 'αβγδεζηθικλμνξοπρςστυφχψω', issue.subject
   end
 
   def test_first_keyword_should_be_matched
